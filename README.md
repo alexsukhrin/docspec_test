@@ -1,31 +1,41 @@
-docspec_test — pytest plugin for docstring code blocks
+<div align="center">
 
-Run Python examples embedded in docstrings as tests. This plugin looks for fenced code blocks marked as:
+# docspec_test — Docstring tests as documentation, spec and CI
 
-```markdown
-```python test
-# your example here
-```
-```
+[![PyPI](https://img.shields.io/pypi/v/docspec-test)](https://pypi.org/project/docspec-test/)
+[![Python](https://img.shields.io/pypi/pyversions/docspec-test.svg)](https://pypi.org/project/docspec-test/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Repo](https://img.shields.io/badge/source-github-black)](https://github.com/alexsukhrin/docspec_test)
 
-It collects such blocks from functions and classes and executes them during pytest runs.
+Turn examples in your docstrings into executable tests — without leaving your code.
+
+</div>
 
 Why
-----
+---
 
-Keep tests where they matter most: next to the API they validate. Docstring tests serve as living examples, documentation, and specification at once. When examples drift, tests fail, forcing alignment between docs and behavior.
+- Keep tests next to the API they validate — examples never drift from reality.
+- Examples become living documentation and a precise specification.
+- Perfect for TDD and quick feedback while coding.
 
-Installation
-------------
+Features
+--------
+
+- Docstring fenced blocks executed as tests: ```python test ...```
+- Directives: `name`, `raises=Exception`, `skip[="reason"]`, `xfail[="reason"]`
+- Optional `setup` / `teardown` blocks per object
+- Pytest integration (auto-discovered plugin) and a standalone CLI
+- Runtime helpers to validate directly in an interpreter or on call
+
+Install
+-------
 
 ```bash
 pip install docspec-test
 ```
 
-Usage
------
-
-1) Add Python fenced blocks with the "test" info tag to your docstrings:
+Quickstart
+----------
 
 ```python
 def add(a: int, b: int) -> int:
@@ -39,7 +49,7 @@ def add(a: int, b: int) -> int:
     return a + b
 ```
 
-2) Run pytest as usual; the plugin is auto-discovered via `pytest11` entry point:
+Run pytest (the plugin is discovered via `pytest11`):
 
 ```bash
 pytest
@@ -48,7 +58,7 @@ pytest
 Directives
 ----------
 
-You can enrich test blocks with directives in the header:
+Add options to the test block header:
 
 ```markdown
 ```python test name="custom-name" raises=ValueError skip="reason" xfail
@@ -56,15 +66,15 @@ You can enrich test blocks with directives in the header:
 ```
 ```
 
-- name: set a custom test name
-- raises: assert an exception is raised (e.g. `raises=KeyError`)
-- skip: mark test skipped (optionally with a reason)
-- xfail: mark test expected to fail (optionally with a reason)
+- name: custom test name
+- raises: assert that an exception is raised (e.g. `raises=KeyError`)
+- skip: skip test, with optional reason
+- xfail: expected failure, with optional reason
 
-Setup/Teardown
---------------
+Setup / Teardown
+----------------
 
-Docstrings can also contain one optional setup and teardown block per object:
+One optional `setup` and `teardown` block per object:
 
 ```markdown
 ```python setup
@@ -81,16 +91,28 @@ state.clear()
 ```
 ```
 
-Requirements
-------------
+Runtime validation (no pytest)
+------------------------------
 
-- Python >= 3.8
-- pytest >= 7.0.0
+```python
+from docspec_test import validate_module, execute_docstring_tests_for_object, validate_on_call
 
-License
--------
+# validate an entire module by path or module object
+validate_module("path/to/module.py")
 
-MIT
+# validate a single function/class
+execute_docstring_tests_for_object(add)
+
+# validate on first call (or on every call with mode="always")
+@validate_on_call
+def inc(x: int) -> int:
+    """
+    ```python test
+    assert inc(1) == 2
+    ```
+    """
+    return x + 1
+```
 
 CLI
 ---
@@ -112,5 +134,53 @@ Ignore directories:
 ```bash
 docspec-test . --ignore .venv --ignore build
 ```
+
+Pytest defaults
+---------------
+
+By default, only docspec-marked tests run (`-m docspec`). To run everything:
+
+```bash
+pytest -m 'not docspec'
+```
+
+Contributing
+------------
+
+We’d love your help! Great first issues: docs, new directives, better error reporting, CI workflows.
+
+Dev setup:
+
+```bash
+git clone https://github.com/alexsukhrin/docspec_test
+cd docspec_test
+python -m venv venv && source venv/bin/activate
+pip install -e .[dev]  # or: pip install -e . && pip install black isort pytest build twine
+```
+
+Run checks:
+
+```bash
+isort . && black . && pytest -m 'not docspec' && pytest
+```
+
+Roadmap
+-------
+
+- Parametrized examples (table-driven)
+- Inline output matching (like doctest) alongside code blocks
+- Jupyter notebooks support
+- VSCode/IDE integration for quick-run
+
+Requirements
+------------
+
+- Python >= 3.8
+- pytest >= 7.0.0
+
+License
+-------
+
+MIT
 
 
