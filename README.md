@@ -2,6 +2,7 @@
 
 # docspec_test — Docstring tests as documentation, spec and CI
 
+[![CI](https://github.com/alexsukhrin/docspec_test/actions/workflows/ci.yml/badge.svg)](https://github.com/alexsukhrin/docspec_test/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/docspec-test)](https://pypi.org/project/docspec-test/)
 [![Python](https://img.shields.io/pypi/pyversions/docspec-test.svg)](https://pypi.org/project/docspec-test/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
