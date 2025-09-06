@@ -1,4 +1,4 @@
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 from .runtime import (
     DocspecValidationError,
     execute_docstring_tests_for_object,
