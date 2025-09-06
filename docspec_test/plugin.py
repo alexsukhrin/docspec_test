@@ -48,6 +48,9 @@ class DocspecItem(pytest.Item):
         self.teardown_code: Optional[str] = teardown_code
         self.options: Dict[str, str] = options
 
+        # Always mark as docspec so users can select with -m docspec
+        self.add_marker(pytest.mark.docspec)
+
         # Apply skip/xfail markers if requested
         if "skip" in options:
             reason = options.get("skip") or "skipped by docspec directive"
