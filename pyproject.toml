@@ -35,6 +35,9 @@ dependencies = [
 [project.entry-points."pytest11"]
 docspec_test = "docspec_test.plugin"
 
+[project.scripts]
+docspec-test = "docspec_test.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/alexsukhrin/docspec_test"
 Source = "https://github.com/alexsukhrin/docspec_test"

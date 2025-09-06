@@ -92,4 +92,25 @@ License
 
 MIT
 
+CLI
+---
+
+Validate all Python files in the current directory:
+
+```bash
+docspec-test
+```
+
+Validate a specific path (file or directory):
+
+```bash
+docspec-test path/to/src
+```
+
+Ignore directories:
+
+```bash
+docspec-test . --ignore .venv --ignore build
+```
+
 
