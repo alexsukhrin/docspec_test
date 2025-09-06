@@ -48,7 +48,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["docspec_test*"]
+include = ["docspec_test*", "docspec_test_django*"]
 
 [tool.black]
 line-length = 88
