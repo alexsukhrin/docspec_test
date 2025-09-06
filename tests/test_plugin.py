@@ -57,6 +57,24 @@ def sub(a, b):
     result.assert_outcomes()
 
 
+def test_doctest_examples_are_executed(pytester):
+    pytester.makepyfile(
+        test_module='''
+def square(x):
+    """
+    Return square.
+
+    >>> square(3)
+    9
+    """
+    return x * x
+'''
+    )
+
+    result = pytester.runpytest("-q")
+    result.assert_outcomes(passed=1)
+
+
 def test_raises_directive(pytester):
     pytester.makepyfile(
         test_module='''

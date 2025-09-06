@@ -1,4 +1,5 @@
 import builtins
+import doctest
 import inspect
 import re
 from typing import Dict, List, Optional, Tuple
@@ -34,6 +35,15 @@ class DocspecModule(pytest.File):
                         setup_code=setup_code,
                         teardown_code=teardown_code,
                         options=options,
+                    )
+
+                # Add doctest-style examples (>>> ...). Use doctest parser directly.
+                dt = doctest.DocTestParser().get_doctest(
+                    doc, module.__dict__, name, str(self.path), 0
+                )
+                if dt.examples:
+                    yield DocspecDoctestItem.from_parent(
+                        self, name=f"{name}[doctest]", doc=doc, obj_name=name
                     )
 
 
@@ -92,6 +102,41 @@ class DocspecItem(pytest.Item):
         return self.path, 0, f"docspec test: {self.obj_name}"
 
 
+class DocspecDoctestItem(pytest.Item):
+    def __init__(self, name, parent, doc, obj_name):
+        super().__init__(name, parent)
+        self.doc = doc
+        self.obj_name = obj_name
+        # Mark as docspec as well
+        self.add_marker(pytest.mark.docspec)
+
+    def runtest(self):
+        module = import_path(
+            self.parent.path,
+            root=self.parent.path.parent,
+            consider_namespace_packages=True,
+        )
+        globs = module.__dict__.copy()
+        # Ensure object is addressable by its name
+        obj = getattr(module, self.obj_name, None)
+        if obj is not None:
+            globs.setdefault(self.obj_name, obj)
+
+        parser = doctest.DocTestParser()
+        test = parser.get_doctest(
+            self.doc, globs, self.obj_name, str(self.parent.path), 0
+        )
+        runner = doctest.DocTestRunner(optionflags=doctest.NORMALIZE_WHITESPACE)
+        runner.run(test)
+        if runner.failures:
+            raise AssertionError(
+                f"doctest failures in {self.obj_name}: {runner.failures}"
+            )
+
+    def reportinfo(self):
+        return self.path, 0, f"docspec doctest: {self.obj_name}"
+
+
 def _parse_doc_blocks(
     doc: str,
 ) -> Tuple[Optional[str], Optional[str], List[Tuple[str, Dict[str, str]]]]:
@@ -101,6 +146,30 @@ def _parse_doc_blocks(
       ```python setup\n...```
       ```python teardown\n...```
       ```python test [name="..."] [raises=ValueError] [skip[="reason"]] [xfail[="reason"]]\n...```
+
+    ```python test name="parse-doc-blocks"
+    text = (
+        '''
+        Intro text
+
+        ```python setup
+        x = 1
+        ```
+
+        ```python test name="t1"
+        assert x == 1
+        ```
+
+        ```python teardown
+        x = 0
+        ```
+        '''
+    )
+    setup, teardown, tests = _parse_doc_blocks(text)
+    assert isinstance(setup, str) and "x = 1" in setup
+    assert isinstance(teardown, str) and "x = 0" in teardown
+    assert len(tests) == 1 and tests[0][1]["name"] == "t1"
+    ```
     """
     setup_code: Optional[str] = None
     teardown_code: Optional[str] = None
@@ -120,6 +189,16 @@ def _parse_doc_blocks(
 
 
 def _parse_options(opts_str: str) -> Dict[str, str]:
+    """Parse options from a test block header.
+
+    ```python test name="parse-options"
+    opts = _parse_options('name="case" raises=ValueError skip xfail="flaky"')
+    assert opts["name"] == "case"
+    assert opts["raises"] == "ValueError"
+    assert "skip" in opts and opts["skip"] == ""
+    assert opts["xfail"] == "flaky"
+    ```
+    """
     opts: Dict[str, str] = {}
     # name="..." (quoted), raises=ValueError, skip or skip="reason", xfail or xfail="reason"
     # name
